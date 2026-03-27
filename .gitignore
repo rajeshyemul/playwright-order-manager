@@ -1,0 +1,27 @@
+# Compiled output — never commit this
+dist/
+
+# Dependencies — always reinstallable
+node_modules/
+
+# Environment variables — may contain secrets
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Test output
+test-results/
+playwright-report/
+.playwright/
+
+# npm logs
+*.log
+npm-debug.log*

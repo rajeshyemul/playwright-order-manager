@@ -1,0 +1,11 @@
+src/
+tests/
+*.spec.ts
+*.test.ts
+tsconfig*.json
+.eslintrc*
+.github/
+.gitignore
+*.md
+!README.md
+!CHANGELOG.md
