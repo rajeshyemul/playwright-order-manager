@@ -34,7 +34,7 @@ npm install --save-dev playwright-order-manager
 
 Add priority tags to your tests. The tag goes in the test title:
 ```typescript
-import { test, expect } from 'playwright-order-manager';
+import { test, expect } from 'playwright-order-manager/fixtures';
 
 // Runs first — highest priority
 test('@P1 user can log in', async ({ page }) => {

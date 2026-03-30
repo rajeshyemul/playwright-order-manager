@@ -190,23 +190,30 @@ export const test = base.extend<{}, OrderedDiscoveryFixtures>({
 // A test-scoped fixture would work too, but beforeEach gives us access
 // to testInfo which has the full title, tags, file, and line number.
 
-test.beforeEach(async ({}, testInfo) => {
-  // Only collect during discovery (--list) mode.
-  // We detect this via the ORDERED_DISCOVERY env var set by the runner.
-  if (!process.env['ORDERED_DISCOVERY']) return;
+// We wrap this in try-catch because test.beforeEach() throws if called
+// outside of a Playwright test context — for example when a plain Node.js
+// script imports from playwright-order-manager for its non-fixture exports.
+// In that case we skip registration silently. The beforeEach only matters
+// when Playwright is actually running tests.
+try {
+  test.beforeEach(async ({}, testInfo) => {
+    if (!process.env['ORDERED_DISCOVERY']) return;
 
-  const tags = extractTags(testInfo);
+    const tags = extractTags(testInfo);
 
-  const discovered: DiscoveredTestCase = {
-    title:   testInfo.title,
-    file:    testInfo.file,
-    line:    testInfo.line,
-    tags,
-    project: testInfo.project.name,
-  };
+    const discovered: DiscoveredTestCase = {
+      title:   testInfo.title,
+      file:    testInfo.file,
+      line:    testInfo.line,
+      tags,
+      project: testInfo.project.name,
+    };
 
-  discoveredTests.push(discovered);
-});
+    discoveredTests.push(discovered);
+  });
+} catch {
+  // Not in a Playwright test context — beforeEach registration skipped.
+}
 
 // =============================================================================
 // RE-EXPORTS

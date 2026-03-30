@@ -7,8 +7,11 @@
   "exports": {
     ".": {
       "require": "./dist/index.js",
-      "import": "./dist/index.mjs",
       "types": "./dist/index.d.ts"
+    },
+    "./fixtures": {
+      "require": "./dist/fixtures/index.js",
+      "types": "./dist/fixtures/index.d.ts"
     }
   },
   "bin": {

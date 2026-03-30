@@ -21,10 +21,14 @@ export { OrderedExecution } from './core/OrderedExecution';
 export { TestOrderManager } from './runner/TestOrderManager';
 
 // ── Playwright fixtures ──────────────────────────────────────────────────────
-// Drop-in replacement for @playwright/test's `test` and `expect`.
-// Users import from here instead of @playwright/test — they get our
-// extended test object that hooks into the discovery phase.
-export { test, expect } from './fixtures';
+// Fixtures are intentionally NOT exported from the main entry point.
+// Loading fixture code has Playwright side effects that break plain Node.js scripts.
+// Users who need the extended test object import from the fixtures subpath:
+//
+//   import { test, expect } from 'playwright-order-manager/fixtures';
+//
+// Everything else (OrderedExecution, TestOrderManager, types, constants)
+// is safe to import from the main entry point.
 
 // Re-export the Playwright types that consumers commonly need
 // so they don't have to mix imports from two packages.
