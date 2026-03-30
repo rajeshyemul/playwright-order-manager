@@ -15,7 +15,7 @@
     }
   },
   "bin": {
-    "pw-order": "./bin/run.js"
+    "pw-order": "bin/run.js"
   },
   "files": [
     "dist",
