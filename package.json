@@ -1,6 +1,6 @@
 {
   "name": "playwright-order-manager",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Priority-ordered test execution for Playwright",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
