@@ -1,3 +1,5 @@
+[![CI](https://github.com/rajeshyemul/playwright-order-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/rajeshyemul/playwright-order-manager/actions/workflows/ci.yml)
+
 # playwright-order-manager
 
 Priority-ordered test execution for Playwright. Run your most critical tests first, get faster feedback on failures, and keep your CI pipeline moving.
