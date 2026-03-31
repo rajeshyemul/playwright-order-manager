@@ -147,12 +147,17 @@ export const test = base.extend<{}, OrderedDiscoveryFixtures>({
       }
 
       // Merge this worker's discoveries with what's already on disk.
-      // De-duplicate by title + project to handle overlapping workers.
-      const seen = new Set(existing.map((t) => `${t.project}::${t.title}`));
+      // De-duplicate by project + file + line + title so tests with the same
+      // name in different files are preserved correctly.
+      const seen = new Set(
+        existing.map((t) => `${t.project}::${t.file}::${t.line}::${t.title}`)
+      );
       const merged = [...existing];
 
       for (const discovered of discoveredTests) {
-        const key = `${discovered.project}::${discovered.title}`;
+        const key =
+          `${discovered.project}::${discovered.file}::` +
+          `${discovered.line}::${discovered.title}`;
         if (!seen.has(key)) {
           seen.add(key);
           merged.push(discovered);

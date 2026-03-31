@@ -220,6 +220,7 @@ export class OrderedReportParser {
         results.push({
           title: spec.title,
           file,
+          line: spec.line,
           status: normaliseStatus(test.status),
           duration: test.duration,
           retries,

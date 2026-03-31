@@ -19,6 +19,7 @@ const VALID_EXECUTION_REPORT = {
         {
           title: 'user can log in',
           ok:    true,
+          line:  5,
           tags:  ['@P1'],
           tests: [
             {
@@ -34,6 +35,7 @@ const VALID_EXECUTION_REPORT = {
         {
           title: 'user sees error on wrong password',
           ok:    false,
+          line:  12,
           tags:  ['@P1'],
           tests: [
             {
@@ -93,6 +95,13 @@ test.describe('OrderedReportParser.parseExecutionReport', () => {
 
     expect(passed).toBeDefined();
     expect(passed?.status).toBe('passed');
+  });
+
+  test('preserves line number when Playwright reports it', () => {
+    const results = OrderedReportParser.parseExecutionReport(VALID_EXECUTION_REPORT);
+    const passed  = results.find((r) => r.title === 'user can log in');
+
+    expect(passed?.line).toBe(5);
   });
 
   test('maps failed test status correctly', () => {

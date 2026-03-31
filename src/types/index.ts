@@ -85,6 +85,12 @@ export interface ExecutedTestResult {
   /** Absolute path to the test file */
   file: string;
 
+  /**
+   * Line number where the test is defined in its file, when available.
+   * Useful for disambiguating tests that share the same title.
+   */
+  line?: number;
+
   /** Final status of this test */
   status: TestStatus;
 

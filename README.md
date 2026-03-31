@@ -34,46 +34,65 @@ npm install --save-dev playwright-order-manager
 
 ### Step 1 — Tag your tests
 
-Add priority tags to your tests. The tag goes in the test title:
+`playwright-order-manager` supports both Playwright tag metadata and legacy
+title-based tags.
+
+For new tests, prefer Playwright's built-in `tag` metadata:
 ```typescript
 import { test, expect } from 'playwright-order-manager/fixtures';
 
 // Runs first — highest priority
-test('@P1 user can log in', async ({ page }) => {
-  await page.goto('/login');
-  // ...
-});
+test(
+  'user can log in',
+  { tag: ['@P1'] },
+  async ({ page }) => {
+    await page.goto('/login');
+    // ...
+  }
+);
 
-// Runs second
+// Runs before everything else
+test(
+  'seed the database',
+  { tag: ['@runFirst'] },
+  async ({ page }) => {
+    // ...
+  }
+);
+
+// Runs after everything else
+test(
+  'clean up test data',
+  { tag: ['@runLast', '@P4'] },
+  async ({ page }) => {
+    // ...
+  }
+);
+```
+
+Legacy title-based tags are still supported for backward compatibility:
+```typescript
 test('@P2 user can view dashboard', async ({ page }) => {
   // ...
 });
 
-// Always runs before everything else
-test('@runFirst seed the database', async ({ page }) => {
-  // ...
-});
-
-// Always runs after everything else
 test('@runLast clean up test data', async ({ page }) => {
   // ...
 });
 ```
 
-> **Important:** Import `test` from `playwright-order-manager` instead of
-> `@playwright/test`. Everything else (`expect`, `Page`, `Browser`, etc.)
-> works exactly the same — it is a drop-in replacement.
+> **Important:** Import `test` from `playwright-order-manager/fixtures`
+> instead of `@playwright/test`. Everything else (`expect`, `Page`,
+> `Browser`, etc.) works exactly the same — it is a drop-in replacement.
+
+Tag precedence rules:
+- `@runFirst` takes precedence over any `@P1`-`@P4` tag
+- `@runLast` takes precedence over any `@P1`-`@P4` tag
+- If multiple priority tags exist, the highest priority wins (`@P1` before `@P4`)
 
 ---
 
-### Step 2 — Copy the merge config template
-```bash
-cp node_modules/playwright-order-manager/templates/playwright.merge.config.ts .
-```
-
----
-
-### Step 3 — Run
+### Step 2 — Run
 ```bash
 npx pw-order
 ```
@@ -83,6 +102,11 @@ That's it. The runner will:
 2. Group them into priority buckets
 3. Execute buckets in order
 4. Write an HTML report to `./ordered-results/ordered-report.html`
+
+> You do not need `playwright.merge.config.ts` for the standard `pw-order`
+> JSON/HTML output shown above. The bundled template is optional and is only
+> useful if you want to experiment with a separate manual Playwright
+> report-merging workflow.
 
 ---
 

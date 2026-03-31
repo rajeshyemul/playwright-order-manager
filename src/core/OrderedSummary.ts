@@ -133,8 +133,11 @@ function generateTestRows(results: ExecutedTestResult[]): string {
       </div>`;
 
     // Title + file:line cell
+    const fileWithLine = result.line
+      ? `${result.file}:${result.line}`
+      : result.file;
     const fileDisplay = result.file
-      ? `<div class="td-file">${escapeHtml(result.file)}</div>`
+      ? `<div class="td-file">${escapeHtml(fileWithLine)}</div>`
       : '';
     const titleCell = `
       <div class="td-title">${escapeHtml(result.title)}</div>

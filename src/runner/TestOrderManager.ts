@@ -205,16 +205,20 @@ function buildDiscoveryArgs(
 /**
  * Builds the Playwright CLI args for executing a single bucket.
  *
- * We pass the test file paths as positional arguments so Playwright
- * only runs the tests that belong to this bucket.
+ * We pass `file:line` selectors as positional arguments so Playwright
+ * only runs the specific tests that belong to this bucket.
+ *
+ * Using whole file paths would accidentally run mixed-priority tests
+ * together when a single spec file contains tests from different buckets.
  */
 function buildBucketArgs(
   config: ResolvedConfig,
   bucket: BucketPlan,
-  executionJsonPath: string
 ): string[] {
-  // Collect unique file paths for tests in this bucket
-  const files = [...new Set(bucket.tests.map((t) => t.file))];
+  // Collect unique file:line selectors for tests in this bucket
+  const selectors = [
+    ...new Set(bucket.tests.map((t) => `${t.file}:${t.line}`)),
+  ];
 
   const args = [
     'test',
@@ -226,8 +230,8 @@ function buildBucketArgs(
     args.push('--project', project);
   }
 
-  // Add each file as a positional argument
-  args.push(...files);
+  // Add each file:line selector as a positional argument
+  args.push(...selectors);
 
   args.push(...config.extraArgs);
 
@@ -380,7 +384,7 @@ export class TestOrderManager {
       `bucket-${num}-${bucket.key}.json`
     );
 
-    const bucketArgs = buildBucketArgs(config, bucket, executionJsonPath);
+    const bucketArgs = buildBucketArgs(config, bucket);
 
     log(`Running: playwright ${bucketArgs.join(' ')}`);
 
@@ -408,7 +412,10 @@ export class TestOrderManager {
         // so the HTML report can show them per test
         results = results.map((result) => {
           const originalTest = bucket.tests.find(
-            (t) => t.title === result.title && t.file === result.file
+            (t) =>
+              t.file === result.file &&
+              t.title === result.title &&
+              (result.line === undefined || t.line === result.line)
           );
           return {
             ...result,
