@@ -112,6 +112,8 @@ That's it. The runner will:
 
 ## Reference Demo Project
 
+A full reference consumer project is available at pw-order-demo, including fixture usage, ordered execution, reports, verification workflow, and programmatic usage examples.
+
 For a full working consumer example, see the [`pw-order-demo`](https://github.com/rajeshyemul/pw-order-demo) reference project.
 
 That repo shows how to use `playwright-order-manager` in a real Playwright project, including:
@@ -125,7 +127,6 @@ That repo shows how to use `playwright-order-manager` in a real Playwright proje
 
 If you want installation and package-level documentation, use this repository.
 If you want a practical end-to-end consumer example, use `pw-order-demo`.
-
 
 ## Execution Order
 
