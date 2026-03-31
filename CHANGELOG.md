@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-03-31
+
+### Fixed
+
+- Discovery now supports raw Playwright `--list --reporter=json` output, so
+  ordered runs no longer depend solely on fixture teardown writing the
+  discovery file
+- Playwright metadata tags like `P1` and `runFirst` are normalized to
+  internal `@P1` and `@runFirst` tags during discovery
+- Bucket execution now inserts `--` before `file:line` selectors so Playwright
+  treats them as test filters instead of extra `--project` values
+- `pw-order --help` now prints package help instead of forwarding to the
+  Playwright CLI
+- Stale `bucket-*.json` files are removed from the report directory before a
+  new run starts, preventing old artifacts from leaking into later runs
+
 ## [0.1.1] - 2026-03-31
 
 ### Changed

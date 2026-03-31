@@ -21,6 +21,28 @@
 
 const { TestOrderManager } = require('../dist/runner/TestOrderManager');
 
+function printHelp() {
+  console.log(`playwright-order-manager
+
+Usage:
+  npx pw-order [options] [playwright-args]
+
+Options:
+  --order-mode <priority|basic>
+  --failure-policy <critical|continue|immediate>
+  --report-root <dir>
+  --config <path>
+  --merge-config <path>
+  --project <name>
+  -h, --help
+
+Examples:
+  npx pw-order
+  npx pw-order --project=chromium
+  npx pw-order --failure-policy=continue --project=chromium
+`);
+}
+
 // =============================================================================
 // CLI ARG PARSING
 // We keep this intentionally simple — no external arg-parsing library.
@@ -94,6 +116,11 @@ function collectExtraArgs(args) {
 async function main() {
   // argv[0] = node, argv[1] = this script, argv[2+] = user args
   const args = process.argv.slice(2);
+
+  if (args.includes('--help') || args.includes('-h')) {
+    printHelp();
+    process.exit(0);
+  }
 
   // Parse runner-specific flags
   const orderMode     = parseFlag(args, 'order-mode');

@@ -43,6 +43,16 @@ interface BucketRunResult {
   shouldAbort:  boolean;
 }
 
+interface SpawnProcessOptions {
+  captureOutput?: boolean;
+}
+
+interface SpawnProcessResult {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+}
+
 // =============================================================================
 // INTERNAL HELPERS
 // =============================================================================
@@ -115,6 +125,15 @@ function ensureDir(dirPath: string): void {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
+function cleanPreviousBucketReports(reportRoot: string): void {
+  if (!fs.existsSync(reportRoot)) return;
+
+  for (const entry of fs.readdirSync(reportRoot)) {
+    if (!/^bucket-\d+-.*\.json$/.test(entry)) continue;
+    fs.unlinkSync(path.join(reportRoot, entry));
+  }
+}
+
 /**
  * Logs a message with a [pw-order] prefix.
  * Using a prefix makes our output easy to distinguish from Playwright's output.
@@ -158,11 +177,12 @@ function getPlaywrightBin(): string {
 function spawnProcess(
   command: string,
   args: string[],
-  env: Record<string, string> = {}
-): Promise<number> {
+  env: Record<string, string> = {},
+  options: SpawnProcessOptions = {}
+): Promise<SpawnProcessResult> {
   return new Promise((resolve, reject) => {
     const child: ChildProcess = spawn(command, args, {
-      stdio: 'inherit',        // pipe stdout/stderr straight to terminal
+      stdio: options.captureOutput ? ['ignore', 'pipe', 'pipe'] : 'inherit',
       env: {
         ...process.env,        // inherit everything from the parent
         ...env,                // then add/override our extras
@@ -170,7 +190,26 @@ function spawnProcess(
       shell: false,            // never use shell — avoids platform quoting issues
     });
 
-    child.on('close', (code) => resolve(code ?? 1));
+    let stdout = '';
+    let stderr = '';
+
+    if (options.captureOutput) {
+      child.stdout?.on('data', (chunk) => {
+        stdout += chunk.toString();
+      });
+
+      child.stderr?.on('data', (chunk) => {
+        const text = chunk.toString();
+        stderr += text;
+        process.stderr.write(text);
+      });
+    }
+
+    child.on('close', (code) => resolve({
+      exitCode: code ?? 1,
+      stdout,
+      stderr,
+    }));
     child.on('error', (err) => reject(
       new Error(`Failed to spawn ${command}: ${err.message}`)
     ));
@@ -231,6 +270,9 @@ function buildBucketArgs(
   }
 
   // Add each file:line selector as a positional argument
+  if (selectors.length > 0) {
+    args.push('--');
+  }
   args.push(...selectors);
 
   args.push(...config.extraArgs);
@@ -296,12 +338,15 @@ export class TestOrderManager {
 
     log(`Running: playwright ${discoveryArgs.join(' ')}`);
 
-    const exitCode = await spawnProcess(
+    const { exitCode, stdout } = await spawnProcess(
       getPlaywrightBin(),
       discoveryArgs,
       {
         ORDERED_DISCOVERY: 'true',
         ORDERED_REPORT_ROOT: config.reportRoot,
+      },
+      {
+        captureOutput: true,
       }
     );
 
@@ -313,18 +358,30 @@ export class TestOrderManager {
       );
     }
 
-    // Read and parse the discovery file written by our fixture
-    if (!fs.existsSync(discoveryFilePath)) {
-      log('Warning: no discovery file found. Did you import test from playwright-order-manager in your test files?');
-      return [];
+    if (stdout.trim().length > 0) {
+      try {
+        const parsed = JSON.parse(stdout);
+        const tests = OrderedReportParser.parseDiscoveryReport(parsed);
+        fs.writeFileSync(discoveryFilePath, JSON.stringify({ tests }, null, 2), 'utf8');
+        log(`Discovered ${tests.length} tests across ${config.project.length || 'all'} projects`);
+        return tests;
+      } catch (err) {
+        log(`Warning: failed to parse Playwright discovery JSON from stdout: ${(err as Error).message}`);
+      }
     }
 
-    const raw = JSON.parse(fs.readFileSync(discoveryFilePath, 'utf8'));
-    const tests = OrderedReportParser.parseDiscoveryReport(raw);
+    // Fallback to the legacy discovery file written by the fixture if present.
+    if (fs.existsSync(discoveryFilePath)) {
+      const raw = JSON.parse(fs.readFileSync(discoveryFilePath, 'utf8'));
+      const tests = OrderedReportParser.parseDiscoveryReport(raw);
 
-    log(`Discovered ${tests.length} tests across ${config.project.length || 'all'} projects`);
+      log(`Discovered ${tests.length} tests across ${config.project.length || 'all'} projects`);
 
-    return tests;
+      return tests;
+    }
+
+    log('Warning: no discovery data found. Did you import test from playwright-order-manager in your test files?');
+    return [];
   }
 
   // ---------------------------------------------------------------------------
@@ -388,7 +445,7 @@ export class TestOrderManager {
 
     log(`Running: playwright ${bucketArgs.join(' ')}`);
 
-    const exitCode = await spawnProcess(
+    const { exitCode } = await spawnProcess(
       getPlaywrightBin(),
       bucketArgs,
       {
@@ -556,8 +613,10 @@ export class TestOrderManager {
     }
     log('='.repeat(60));
 
-    // Ensure report root exists before anything else
-    ensureDir(path.resolve(process.cwd(), config.reportRoot));
+    // Ensure report root exists before anything else and remove stale bucket reports
+    const reportRootPath = path.resolve(process.cwd(), config.reportRoot);
+    ensureDir(reportRootPath);
+    cleanPreviousBucketReports(reportRootPath);
 
     let allBucketRecords: BucketExecutionRecord[] = [];
     let exitCode = 0;

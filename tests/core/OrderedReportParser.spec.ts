@@ -77,6 +77,45 @@ const VALID_DISCOVERY_REPORT = {
   ],
 };
 
+const VALID_PLAYWRIGHT_DISCOVERY_REPORT = {
+  suites: [
+    {
+      title: 'mixed.spec.ts',
+      file: 'mixed.spec.ts',
+      specs: [
+        {
+          title: 'P1 test',
+          ok: true,
+          line: 12,
+          tags: ['P1'],
+          tests: [
+            {
+              projectName: 'chromium',
+              status: 'skipped',
+              duration: 0,
+              results: [],
+            },
+          ],
+        },
+        {
+          title: 'run first test',
+          ok: true,
+          line: 21,
+          tags: ['runFirst'],
+          tests: [
+            {
+              projectName: 'chromium',
+              status: 'skipped',
+              duration: 0,
+              results: [],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 // =============================================================================
 // parseExecutionReport
 // =============================================================================
@@ -267,6 +306,25 @@ test.describe('OrderedReportParser.parseDiscoveryReport', () => {
   test('returns empty array when tests array is empty', () => {
     const tests = OrderedReportParser.parseDiscoveryReport({ tests: [] });
     expect(tests).toHaveLength(0);
+  });
+
+  test('parses raw Playwright discovery JSON', () => {
+    const tests = OrderedReportParser.parseDiscoveryReport(
+      VALID_PLAYWRIGHT_DISCOVERY_REPORT
+    );
+
+    expect(tests).toHaveLength(2);
+    expect(tests[0].file).toBe('mixed.spec.ts');
+    expect(tests[0].project).toBe('chromium');
+  });
+
+  test('normalises raw Playwright tags to @-prefixed tags', () => {
+    const tests = OrderedReportParser.parseDiscoveryReport(
+      VALID_PLAYWRIGHT_DISCOVERY_REPORT
+    );
+
+    expect(tests.find((t) => t.title === 'P1 test')?.tags).toEqual(['@P1']);
+    expect(tests.find((t) => t.title === 'run first test')?.tags).toEqual(['@runFirst']);
   });
 
 });

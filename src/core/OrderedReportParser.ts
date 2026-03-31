@@ -55,6 +55,7 @@ interface PlaywrightSpec {
  */
 interface PlaywrightTest {
   projectName: string;
+  projectId?: string;
   status: string;
   duration: number;
   errors?: Array<{ message?: string; value?: string }>;
@@ -150,6 +151,37 @@ function collectSpecs(
       collectSpecs(child, child.file ?? filePath, collected);
     }
   }
+}
+
+/**
+ * Playwright's JSON reporter returns tags without the leading '@'
+ * when tests are declared with metadata like { tag: ['@P1'] }.
+ * Normalize everything to the internal '@tag' format the runner expects.
+ */
+function normaliseTag(tag: unknown): string | undefined {
+  if (typeof tag !== 'string') return undefined;
+
+  const trimmed = tag.trim();
+  if (trimmed.length === 0) return undefined;
+
+  return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
+}
+
+function normaliseTags(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+
+  const seen = new Set<string>();
+  const normalised: string[] = [];
+
+  for (const rawTag of tags) {
+    const tag = normaliseTag(rawTag);
+    if (!tag || seen.has(tag)) continue;
+
+    seen.add(tag);
+    normalised.push(tag);
+  }
+
+  return normalised;
 }
 
 // =============================================================================
@@ -256,26 +288,64 @@ export class OrderedReportParser {
       );
     }
 
-    const data = rawJson as { tests?: unknown };
+    const report = rawJson as PlaywrightJsonReport & { tests?: unknown };
 
-    if (!Array.isArray(data.tests)) {
+    // Support our custom discovery file format: { tests: [...] }
+    if (Array.isArray(report.tests)) {
+      return report.tests
+        .filter((entry): entry is DiscoveredTestCase => {
+          return (
+            entry !== null &&
+            typeof entry === 'object' &&
+            typeof (entry as DiscoveredTestCase).title === 'string' &&
+            typeof (entry as DiscoveredTestCase).file === 'string' &&
+            Array.isArray((entry as DiscoveredTestCase).tags)
+          );
+        })
+        .map((entry) => ({
+          ...entry,
+          tags: normaliseTags(entry.tags),
+        }));
+    }
+
+    // Also support raw Playwright JSON reporter output from `playwright test --list`.
+    if (!Array.isArray(report.suites)) {
       throw new Error(
         'OrderedReportParser.parseDiscoveryReport: ' +
-        'discovery JSON missing "tests" array. ' +
-        'Make sure the orderedDiscovery fixture is set up correctly.'
+        'JSON is neither a custom discovery file nor a Playwright report.'
       );
     }
 
-    // Validate and cast each entry
-    return data.tests
-      .filter((entry): entry is DiscoveredTestCase => {
-        return (
-          entry !== null &&
-          typeof entry === 'object' &&
-          typeof (entry as DiscoveredTestCase).title === 'string' &&
-          typeof (entry as DiscoveredTestCase).file === 'string' &&
-          Array.isArray((entry as DiscoveredTestCase).tags)
-        );
-      });
+    const allSpecs: Array<{ spec: PlaywrightSpec; file: string }> = [];
+    for (const topSuite of report.suites) {
+      collectSpecs(topSuite, topSuite.file ?? '', allSpecs);
+    }
+
+    const discovered: DiscoveredTestCase[] = [];
+    const seen = new Set<string>();
+
+    for (const { spec, file } of allSpecs) {
+      if (!Array.isArray(spec.tests) || spec.tests.length === 0) continue;
+
+      const tags = normaliseTags(spec.tags);
+
+      for (const test of spec.tests) {
+        const project = test.projectName ?? test.projectId ?? '';
+        const key = `${project}::${file}::${spec.line}::${spec.title}`;
+
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        discovered.push({
+          title: spec.title,
+          file,
+          line: spec.line ?? 0,
+          tags,
+          project,
+        });
+      }
+    }
+
+    return discovered;
   }
 }

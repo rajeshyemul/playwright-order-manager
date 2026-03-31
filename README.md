@@ -110,6 +110,23 @@ That's it. The runner will:
 
 ---
 
+## Reference Demo Project
+
+For a full working consumer example, see the [`pw-order-demo`](https://github.com/rajeshyemul/pw-order-demo) reference project.
+
+That repo shows how to use `playwright-order-manager` in a real Playwright project, including:
+
+- importing `test` from `playwright-order-manager/fixtures`
+- tagging tests with `@runFirst`, `@runLast`, `@P1`, `@P2`, and `@P3`
+- running ordered execution with `pw-order`
+- generating and opening ordered reports
+- verifying mixed-priority tests in the same file
+- using `TestOrderManager.run(...)` programmatically from a custom Node script
+
+If you want installation and package-level documentation, use this repository.
+If you want a practical end-to-end consumer example, use `pw-order-demo`.
+
+
 ## Execution Order
 
 Given tests tagged with various priorities, the execution order is always:
