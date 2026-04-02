@@ -1,4 +1,6 @@
 [![CI](https://github.com/rajeshyemul/playwright-order-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/rajeshyemul/playwright-order-manager/actions/workflows/ci.yml)
+[![npm downloads](https://img.shields.io/npm/dm/playwright-order-manager.svg)](https://www.npmjs.com/package/playwright-order-manager)
+[![npm version](https://img.shields.io/npm/v/playwright-order-manager.svg)](https://www.npmjs.com/package/playwright-order-manager)
 
 # playwright-order-manager
 
