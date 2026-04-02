@@ -229,7 +229,7 @@ function buildDiscoveryArgs(
     'test',
     '--list',
     '--config', config.playwrightConfigPath,
-    `--reporter=json:${discoveryJsonPath}`,  // write directly to file
+    '--reporter=json',  // write directly to file
   ];
 
   for (const project of config.project) {
@@ -263,7 +263,7 @@ function buildBucketArgs(
   const args = [
     'test',
     '--config', config.playwrightConfigPath,
-    `--reporter=json:${executionJsonPath}`,  // write directly to file
+    '--reporter=json',
   ];
 
   for (const project of config.project) {
@@ -345,6 +345,7 @@ export class TestOrderManager {
       {
         ORDERED_DISCOVERY: 'true',
         ORDERED_REPORT_ROOT: config.reportRoot,
+        PLAYWRIGHT_JSON_OUTPUT_NAME: discoveryFilePath,
       },
       {
         captureOutput: true,
@@ -451,7 +452,8 @@ export class TestOrderManager {
       getPlaywrightBin(),
       bucketArgs,
       {
-        ORDERED_REPORT_ROOT: config.reportRoot
+        ORDERED_REPORT_ROOT: config.reportRoot,
+        PLAYWRIGHT_JSON_OUTPUT_NAME: executionJsonPath,  // ← writes JSON to file
       }
     );
 

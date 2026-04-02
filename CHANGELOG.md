@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-04-02
+
+### Fixed
+- Reverted `--reporter=json:path` syntax which caused "Cannot find module"
+  error on Playwright 1.57+. JSON output now correctly uses
+  PLAYWRIGHT_JSON_OUTPUT_NAME env var with --reporter=json, which also
+  fixes stdout pollution from dotenv@17 and similar libraries.
+
 ## [0.1.4] - 2026-04-02
 
 ### Fixed
