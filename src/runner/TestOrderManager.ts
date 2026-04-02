@@ -229,7 +229,7 @@ function buildDiscoveryArgs(
     'test',
     '--list',
     '--config', config.playwrightConfigPath,
-    `--reporter=json`,
+    `--reporter=json:${discoveryJsonPath}`,  // write directly to file
   ];
 
   for (const project of config.project) {
@@ -253,6 +253,7 @@ function buildDiscoveryArgs(
 function buildBucketArgs(
   config: ResolvedConfig,
   bucket: BucketPlan,
+  executionJsonPath: string
 ): string[] {
   // Collect unique file:line selectors for tests in this bucket
   const selectors = [
@@ -262,7 +263,7 @@ function buildBucketArgs(
   const args = [
     'test',
     '--config', config.playwrightConfigPath,
-    `--reporter=json`,
+    `--reporter=json:${executionJsonPath}`,  // write directly to file
   ];
 
   for (const project of config.project) {
@@ -366,7 +367,8 @@ export class TestOrderManager {
         log(`Discovered ${tests.length} tests across ${config.project.length || 'all'} projects`);
         return tests;
       } catch (err) {
-        log(`Warning: failed to parse Playwright discovery JSON from stdout: ${(err as Error).message}`);
+        log('Warning: no discovery file found at ' + discoveryFilePath + 
+    '. Did you import test from playwright-order-manager in your test files?');
       }
     }
 
@@ -441,7 +443,7 @@ export class TestOrderManager {
       `bucket-${num}-${bucket.key}.json`
     );
 
-    const bucketArgs = buildBucketArgs(config, bucket);
+    const bucketArgs = buildBucketArgs(config, bucket, executionJsonPath);
 
     log(`Running: playwright ${bucketArgs.join(' ')}`);
 
@@ -449,9 +451,7 @@ export class TestOrderManager {
       getPlaywrightBin(),
       bucketArgs,
       {
-        ORDERED_REPORT_ROOT: config.reportRoot,
-        // Tell Playwright to write its JSON report to our path
-        PLAYWRIGHT_JSON_OUTPUT_NAME: executionJsonPath,
+        ORDERED_REPORT_ROOT: config.reportRoot
       }
     );
 
