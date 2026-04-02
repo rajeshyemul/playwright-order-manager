@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2026-04-02
+
+### Fixed
+- Discovery and execution JSON now written to file via `--reporter=json:path`
+  instead of read from stdout. Fixes compatibility with dotenv@17 and any
+  other library that prints to stdout during Playwright initialisation.
+- Fixed missing `executionJsonPath` argument in `buildBucketArgs` call site.
+
+
 ## [0.1.2] - 2026-03-31
 
 ### Fixed
